@@ -91,12 +91,12 @@ def predict(image):
 # Gradio interface with disclaimer and description
 iface = gr.Interface(
     fn=predict,
-    inputs=gr.Image(type="pil"),  # Upload an image in JPG or PNG format
+    inputs=gr.Image(type="pil", shape=(224, 224)),  # Upload an image in JPG or PNG format
     outputs=gr.Text(),
     title="Face Beauty Rating with Symmetry and Feature Scores",
     description="Upload an image to get a combined beauty score based on deep learning and facial feature scores (eyes, nose). "
                 "This model was trained on the SCUT-FBP5500 dataset and uses Dlib for landmark detection.\n\n"
-                "Disclaimer: This model is for entertainment purposes only and should not be taken as a definitive judgment of physical appearance.",
+                "Disclaimer: This model is for educational purposes only and should not be taken as a definitive judgment of physical appearance.",
     allow_flagging="never",
     live=False  # Add a Submit button
 )
