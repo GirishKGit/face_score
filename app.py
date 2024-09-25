@@ -1,30 +1,104 @@
 import gradio as gr
 from fastai.vision.all import *
-import torch
+import dlib
+import cv2
+import numpy as np
 
-# Load the trained model (make sure the model file is in the same directory or update the path)
-learn = load_learner('beauty_model_finetuned_export.pkl')
+# Load Dlib's pre-trained facial landmark predictor
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
-# Image preprocessing and prediction function
-def predict(image):
-    # Convert to a Fastai PILImage for prediction
-    img = PILImage.create(image)
+# Load the trained deep learning model
+learn = load_learner('/kaggle/input/pkl-file/beauty_model_finetuned_export.pkl')
+
+
+# Function to detect landmarks and calculate feature scores (eyes, nose, etc.)
+def detect_landmarks(image):
+    # Convert to grayscale for Dlib
+    gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+    faces = detector(gray)
     
-    # Get prediction from the model (the prediction score is in the second position)
-    pred_score = learn.predict(img)[1].item()  # Extract the score (as float)
+    if len(faces) == 0:
+        return None
+    
+    face = faces[0]
+    landmarks = predictor(gray, face)
+    
+    # Extract landmark points
+    landmarks_points = [(landmarks.part(i).x, landmarks.part(i).y) for i in range(68)]
+    
+    # Calculate individual feature scores (eyes, nose)
+    eyes_score = calculate_eyes_score(landmarks_points)
+    nose_score = calculate_nose_score(landmarks_points)
+    
+    return eyes_score, nose_score
 
-    # Return the beauty score with the range clarified
-    return f"Predicted beauty score: {pred_score:.2f} / 5"
+# Function to calculate symmetry score for eyes
+def calculate_eyes_score(landmarks):
+    left_eye = landmarks[36:42]  # Left eye landmarks
+    right_eye = landmarks[42:48]  # Right eye landmarks
+    
+    left_eye_center = np.mean(left_eye, axis=0)
+    right_eye_center = np.mean(right_eye, axis=0)
+    
+    # Calculate distance between left and right eyes (symmetry)
+    symmetry_score = np.linalg.norm(left_eye_center - right_eye_center)
+    
+    # Normalize to a 1-5 scale
+    normalized_eyes_score = 5 - (symmetry_score / 10)  # Adjust divisor based on observation
+    return max(1, min(5, normalized_eyes_score))
 
-# Create Gradio interface with updated components
+# Function to calculate score for the nose (can use ratio-based measurements)
+def calculate_nose_score(landmarks):
+    # Example: distance between the nose tip and other facial features (e.g., nose bridge)
+    nose_tip = landmarks[30]  # Nose tip
+    nose_bridge = np.mean([landmarks[27], landmarks[28], landmarks[29]], axis=0)  # Nose bridge
+    
+    # Calculate symmetry or proportion
+    nose_score = np.linalg.norm(nose_tip - nose_bridge)
+    
+    # Normalize to a 1-5 scale
+    normalized_nose_score = 5 - (nose_score / 10)  # Adjust divisor based on observation
+    return max(1, min(5, normalized_nose_score))
+
+# Function to predict combined beauty score (eyes, nose, deep learning score, and total)
+def predict(image):
+    # Resize the image to a consistent size (e.g., 224x224)
+    image = image.resize((224, 224))
+    
+    # Deep learning model prediction
+    img = PILImage.create(image)
+    deep_learning_score = learn.predict(img)[1].item()
+
+    # Symmetry score from landmarks (eyes and nose)
+    symmetry_scores = detect_landmarks(image)
+    
+    if symmetry_scores is None:
+        return "Error: Could not detect facial landmarks."
+    
+    eyes_score, nose_score = symmetry_scores
+    
+    # Combine the scores into a final total score
+    total_score = (0.5 * deep_learning_score) + (0.25 * eyes_score) + (0.25 * nose_score)
+    
+    # Return detailed scores for each feature and total score
+    return (f"Eyes Score: {eyes_score:.2f} / 5\n"
+            f"Nose Score: {nose_score:.2f} / 5\n"
+            f"Deep Learning Score: {deep_learning_score:.2f} / 5\n"
+            f"Total Combined Score: {total_score:.2f} / 5")
+
+# Gradio interface with disclaimer and description
 iface = gr.Interface(
     fn=predict,
-    inputs=gr.Image(type="pil"),  # Updated from gr.inputs.Image to gr.Image
-    outputs=gr.Text(),  # Updated from gr.outputs.Text to gr.Text
-    title="Face Beauty Rating",
-    description="Upload an image to get a beauty score prediction (out of 5) from a fine-tuned ResNet50 model."
+    inputs=gr.Image(type="pil"),  # Upload an image in JPG or PNG format
+    outputs=gr.Text(),
+    title="Face Beauty Rating with Symmetry and Feature Scores",
+    description="Upload an image to get a combined beauty score based on deep learning and facial feature scores (eyes, nose). "
+                "This model was trained on the SCUT-FBP5500 dataset and uses Dlib for landmark detection.",
+    examples=["example1.jpg", "example2.png"],
+    allow_flagging="never",
+    live=True
 )
 
-# Launch the app
-if __name__ == "__main__":
-    iface.launch()
+# Launch the app with a disclaimer
+iface.launch(share=True)
