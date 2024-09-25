@@ -15,7 +15,7 @@ detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 # Load the trained deep learning model
-learn = load_learner('/kaggle/input/pkl-file/beauty_model_finetuned_export.pkl')
+learn = load_learner('beauty_model_finetuned_export.pkl')  # Corrected path
 
 # Function to detect landmarks and calculate feature scores (eyes, nose, etc.)
 def detect_landmarks(image):
