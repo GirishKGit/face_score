@@ -100,7 +100,7 @@ iface = gr.Interface(
     title="Face Beauty Rating with Symmetry and Feature Scores",
     description="Upload an image to get a combined beauty score based on deep learning and facial feature scores (eyes, nose). "
                 "This model was trained on the SCUT-FBP5500 dataset and uses Dlib for landmark detection.",
-    examples=["example1.jpg", "example2.png"],
+    
     allow_flagging="never",
     live=True
 )
