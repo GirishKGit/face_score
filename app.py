@@ -3,6 +3,12 @@ from fastai.vision.all import *
 import dlib
 import cv2
 import numpy as np
+import os
+
+# Download and extract Dlib's facial landmark predictor if not already present
+if not os.path.exists("shape_predictor_68_face_landmarks.dat"):
+    os.system("wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2")
+    os.system("bzip2 -d shape_predictor_68_face_landmarks.dat.bz2")
 
 # Load Dlib's pre-trained facial landmark predictor
 detector = dlib.get_frontal_face_detector()
@@ -10,7 +16,6 @@ predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 # Load the trained deep learning model
 learn = load_learner('/kaggle/input/pkl-file/beauty_model_finetuned_export.pkl')
-
 
 # Function to detect landmarks and calculate feature scores (eyes, nose, etc.)
 def detect_landmarks(image):
