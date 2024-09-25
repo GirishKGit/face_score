@@ -96,10 +96,12 @@ iface = gr.Interface(
     title="Face Beauty Rating with Symmetry and Feature Scores",
     description="Upload an image to get a combined beauty score based on deep learning and facial feature scores (eyes, nose). "
                 "This model was trained on the SCUT-FBP5500 dataset and uses Dlib for landmark detection.\n\n"
-                "Disclaimer: This model is for educational purposes only and should not be taken as a definitive judgment of physical appearance.",
+                "Disclaimer: This model is for educational purposes only and should not be taken as a definitive judgment of physical appearance.\n\n"
+                "**Note:** Please upload a clear, front-facing photo where the face is fully visible and not obstructed. Ensure good lighting and that the face is not too angled or cropped. The model requires the face to be properly aligned to detect landmarks such as the eyes and nose accurately. Failure to do so may result in errors or inaccurate scores.",
     allow_flagging="never",
     live=False  # Add a Submit button
 )
+
 
 # Launch the app
 iface.launch(share=True)
