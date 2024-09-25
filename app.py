@@ -5,7 +5,7 @@ import torch
 # Load the trained model (make sure the model file is in the same directory or update the path)
 learn = load_learner('beauty_model_finetuned_export.pkl')
 
-# Image preprocessing function
+# Image preprocessing and prediction function
 def predict(image):
     # Convert to a Fastai PILImage for prediction
     img = PILImage.create(image)
@@ -16,11 +16,11 @@ def predict(image):
     # Return the beauty score
     return f"Predicted beauty score: {pred_score[0]:.2f}"
 
-# Create Gradio interface
+# Create Gradio interface with updated components
 iface = gr.Interface(
     fn=predict,
-    inputs=gr.inputs.Image(type="pil"),
-    outputs="text",
+    inputs=gr.Image(type="pil"),  # Updated from gr.inputs.Image to gr.Image
+    outputs=gr.Text(),  # Updated from gr.outputs.Text to gr.Text
     title="Face Beauty Rating",
     description="Upload an image to get a beauty score prediction from a fine-tuned ResNet50 model."
 )
