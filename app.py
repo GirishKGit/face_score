@@ -3,19 +3,13 @@ from fastai.vision.all import *
 import dlib
 import cv2
 import numpy as np
-import os
-
-# Download and extract Dlib's facial landmark predictor if not already present
-if not os.path.exists("shape_predictor_68_face_landmarks.dat"):
-    os.system("wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2")
-    os.system("bzip2 -d shape_predictor_68_face_landmarks.dat.bz2")
 
 # Load Dlib's pre-trained facial landmark predictor
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
 # Load the trained deep learning model
-learn = load_learner('beauty_model_finetuned_export.pkl')  # Corrected path
+learn = load_learner('beauty_model_finetuned_export.pkl')
 
 # Function to detect landmarks and calculate feature scores (eyes, nose, etc.)
 def detect_landmarks(image):
@@ -83,13 +77,15 @@ def predict(image):
     
     eyes_score, nose_score = symmetry_scores
     
-    # Combine the scores into a final total score
-    total_score = (0.5 * deep_learning_score) + (0.25 * eyes_score) + (0.25 * nose_score)
+    # Calculate facial feature score as an average of eyes and nose
+    facial_feature_score = (eyes_score + nose_score) / 2
+    
+    # Calculate total average score (Simple Average)
+    total_score = (deep_learning_score + facial_feature_score) / 2
     
     # Return detailed scores for each feature and total score
-    return (f"Eyes Score: {eyes_score:.2f} / 5\n"
-            f"Nose Score: {nose_score:.2f} / 5\n"
-            f"Deep Learning Score: {deep_learning_score:.2f} / 5\n"
+    return (f"Deep Learning Score: {deep_learning_score:.2f} / 5\n"
+            f"Facial Feature Score: {facial_feature_score:.2f} / 5 (Eyes Score: {eyes_score:.2f} / 5, Nose Score: {nose_score:.2f} / 5)\n"
             f"Total Combined Score: {total_score:.2f} / 5")
 
 # Gradio interface with disclaimer and description
@@ -99,11 +95,11 @@ iface = gr.Interface(
     outputs=gr.Text(),
     title="Face Beauty Rating with Symmetry and Feature Scores",
     description="Upload an image to get a combined beauty score based on deep learning and facial feature scores (eyes, nose). "
-                "This model was trained on the SCUT-FBP5500 dataset and uses Dlib for landmark detection.",
-    
+                "This model was trained on the SCUT-FBP5500 dataset and uses Dlib for landmark detection.\n\n"
+                "Disclaimer: This model is for entertainment purposes only and should not be taken as a definitive judgment of physical appearance.",
     allow_flagging="never",
-    live=True
+    live=False  # Add a Submit button
 )
 
-# Launch the app with a disclaimer
+# Launch the app
 iface.launch(share=True)
