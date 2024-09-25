@@ -1,5 +1,8 @@
 opencv-python
+torch
+torchvision
 fastai
 gradio
-torch
+dlib
+cmake
 
