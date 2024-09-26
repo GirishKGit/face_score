@@ -79,6 +79,9 @@ def predict(image):
     # Resize the image to a consistent size (e.g., 224x224)
     image = image.resize((224, 224))
     
+    # Send event to Google Analytics when an image is processed
+    send_ga_event('ImageUpload', 'User uploaded image for beauty score')
+    
     # Deep learning model prediction
     img = PILImage.create(image)
     deep_learning_score = learn.predict(img)[1].item()
@@ -87,6 +90,7 @@ def predict(image):
     symmetry_scores = detect_landmarks(image)
     
     if symmetry_scores is None:
+        send_ga_event('Error', 'Facial landmarks not detected')  # Track errors
         return "Error: Could not detect facial landmarks."
     
     eyes_score, nose_score = symmetry_scores
@@ -96,6 +100,9 @@ def predict(image):
     
     # Calculate total average score (Simple Average)
     total_score = (deep_learning_score + facial_feature_score) / 2
+    
+    # Send event after successful prediction
+    send_ga_event('Prediction', 'Prediction completed successfully')
     
     # Return detailed scores for each feature and total score
     return (f"Deep Learning Score: {deep_learning_score:.2f} / 5\n"
@@ -115,7 +122,6 @@ iface = gr.Interface(
     allow_flagging="never",
     live=False  # Add a Submit button
 )
-
 
 # Launch the app
 iface.launch(share=True)
