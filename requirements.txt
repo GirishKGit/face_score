@@ -6,4 +6,5 @@ gradio
 dlib
 cmake
 requests
+numpy
 
