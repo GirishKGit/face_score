@@ -4,19 +4,24 @@ import dlib
 import cv2
 import numpy as np
 import requests
+import uuid
 
-# Google Analytics Event Tracking
+# Improved Google Analytics Event Tracking
 def send_ga_event(category, action, label=None):
+    client_id = str(uuid.uuid4())  # Generate a unique client ID
     payload = {
         'v': '1',  # Version of the API
-        'tid': 'G-RZF99L2LWQ',  # Replace with your Measurement ID
-        'cid': '555',  # Client ID (anonymous)
-        't': 'event',  # Event type
-        'ec': category,  # Event category
-        'ea': action,  # Event action
-        'el': label,  # Event label (optional)
+        'tid': 'G-RZF99L2LWQ',  # Replace with your actual Measurement ID
+        'cid': client_id,
+        't': 'event',
+        'ec': category,
+        'ea': action,
+        'el': label,
     }
-    requests.post('https://www.google-analytics.com/collect', data=payload)
+    try:
+        requests.post('https://www.google-analytics.com/collect', data=payload)
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send Google Analytics event: {e}")
 
 # Load Dlib's pre-trained facial landmark predictor
 detector = dlib.get_frontal_face_detector()
@@ -102,7 +107,7 @@ def predict(image):
     total_score = (deep_learning_score + facial_feature_score) / 2
     
     # Send event after successful prediction
-    send_ga_event('Prediction', 'Prediction completed successfully')
+    send_ga_event('Prediction', 'Prediction completed successfully', f"Score: {total_score:.2f}")
     
     # Return detailed scores for each feature and total score
     return (f"Deep Learning Score: {deep_learning_score:.2f} / 5\n"
