@@ -3,25 +3,6 @@ from fastai.vision.all import *
 import dlib
 import cv2
 import numpy as np
-import requests
-import uuid
-
-# Improved Google Analytics Event Tracking
-def send_ga_event(category, action, label=None):
-    client_id = str(uuid.uuid4())  # Generate a unique client ID
-    payload = {
-        'v': '1',  # Version of the API
-        'tid': 'G-RZF99L2LWQ',  # Replace with your actual Measurement ID
-        'cid': client_id,
-        't': 'event',
-        'ec': category,
-        'ea': action,
-        'el': label,
-    }
-    try:
-        requests.post('https://www.google-analytics.com/collect', data=payload)
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to send Google Analytics event: {e}")
 
 # Load Dlib's pre-trained facial landmark predictor
 detector = dlib.get_frontal_face_detector()
@@ -84,9 +65,6 @@ def predict(image):
     # Resize the image to a consistent size (e.g., 224x224)
     image = image.resize((224, 224))
     
-    # Send event to Google Analytics when an image is processed
-    send_ga_event('ImageUpload', 'User uploaded image for beauty score')
-    
     # Deep learning model prediction
     img = PILImage.create(image)
     deep_learning_score = learn.predict(img)[1].item()
@@ -95,7 +73,6 @@ def predict(image):
     symmetry_scores = detect_landmarks(image)
     
     if symmetry_scores is None:
-        send_ga_event('Error', 'Facial landmarks not detected')  # Track errors
         return "Error: Could not detect facial landmarks."
     
     eyes_score, nose_score = symmetry_scores
@@ -105,9 +82,6 @@ def predict(image):
     
     # Calculate total average score (Simple Average)
     total_score = (deep_learning_score + facial_feature_score) / 2
-    
-    # Send event after successful prediction
-    send_ga_event('Prediction', 'Prediction completed successfully', f"Score: {total_score:.2f}")
     
     # Return detailed scores for each feature and total score
     return (f"Deep Learning Score: {deep_learning_score:.2f} / 5\n"
@@ -125,8 +99,31 @@ iface = gr.Interface(
                 "Disclaimer: This model is for educational purposes only and should not be taken as a definitive judgment of physical appearance.\n\n"
                 "**Note:** Please upload a clear, front-facing photo where the face is fully visible and not obstructed. Ensure good lighting and that the face is not too angled or cropped. The model requires the face to be properly aligned to detect landmarks such as the eyes and nose accurately. Failure to do so may result in errors or inaccurate scores.",
     allow_flagging="never",
-    live=False  # Add a Submit button
+    live=False,  # Add a Submit button
+    analytics_enabled=True,
+    css="""
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-RZF99L2LWQ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-RZF99L2LWQ');
+      
+      // Custom event tracking
+      document.addEventListener('DOMContentLoaded', (event) => {
+        const predictButton = document.querySelector('button.primary');
+        if (predictButton) {
+          predictButton.addEventListener('click', () => {
+            gtag('event', 'predict_button_click', {
+              'event_category': 'User Interaction',
+              'event_label': 'Predict Button Clicked'
+            });
+          });
+        }
+      });
+    </script>
+    """
 )
 
 # Launch the app
-iface.launch(share=True)
+iface.launch()
