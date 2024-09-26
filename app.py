@@ -3,6 +3,20 @@ from fastai.vision.all import *
 import dlib
 import cv2
 import numpy as np
+import requests
+
+# Google Analytics Event Tracking
+def send_ga_event(category, action, label=None):
+    payload = {
+        'v': '1',  # Version of the API
+        'tid': 'G-RZF99L2LWQ',  # Replace with your Measurement ID
+        'cid': '555',  # Client ID (anonymous)
+        't': 'event',  # Event type
+        'ec': category,  # Event category
+        'ea': action,  # Event action
+        'el': label,  # Event label (optional)
+    }
+    requests.post('https://www.google-analytics.com/collect', data=payload)
 
 # Load Dlib's pre-trained facial landmark predictor
 detector = dlib.get_frontal_face_detector()
