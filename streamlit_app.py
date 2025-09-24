@@ -264,16 +264,23 @@ def show_results(image: Image.Image) -> None:
         deep_score = predict_deep_learning_score(image)
         eyes_nose = detect_eyes_nose_scores(image)
 
-    if eyes_nose is None:
-        st.error("Could not detect a face or landmarks. Please upload a clear, front-facing photo with good lighting.")
+    eyes_score = None
+    nose_score = None
+    facial_feature_score = None
+
+    if eyes_nose is not None:
+        eyes_score, nose_score = eyes_nose
+        facial_feature_score = (eyes_score + nose_score) / 2.0
+
+    # If deep model not available, gracefully degrade to features (if present)
+    # If features not available, degrade to deep score only
+    if deep_score is None and facial_feature_score is None:
+        st.error("Could not detect landmarks and model is unavailable. Please try a different image or environment.")
         return
-
-    eyes_score, nose_score = eyes_nose
-    facial_feature_score = (eyes_score + nose_score) / 2.0
-
-    # If deep model not available, gracefully degrade
-    if deep_score is None:
+    if deep_score is None and facial_feature_score is not None:
         deep_score = facial_feature_score
+    if deep_score is not None and facial_feature_score is None:
+        facial_feature_score = deep_score
     total_score = (deep_score + facial_feature_score) / 2.0
 
     left, center, right = st.columns([1, 2, 1])
@@ -284,8 +291,12 @@ def show_results(image: Image.Image) -> None:
         st.markdown("<div class='results-title'>Your Results</div>", unsafe_allow_html=True)
         m1, m2, m3 = st.columns(3)
         m1.metric(label="Deep Learning", value=f"{deep_score:.2f} / 5")
-        m2.metric(label="Eyes Symmetry", value=f"{eyes_score:.2f} / 5")
-        m3.metric(label="Nose", value=f"{nose_score:.2f} / 5")
+        if eyes_score is not None and nose_score is not None:
+            m2.metric(label="Eyes Symmetry", value=f"{eyes_score:.2f} / 5")
+            m3.metric(label="Nose", value=f"{nose_score:.2f} / 5")
+        else:
+            m2.metric(label="Eyes Symmetry", value="—")
+            m3.metric(label="Nose", value="—")
 
         m4, m5 = st.columns(2)
         m4.metric(label="Facial Feature Score", value=f"{facial_feature_score:.2f} / 5")
@@ -300,12 +311,16 @@ def show_results(image: Image.Image) -> None:
                 {
                     "Metric": [
                         "Deep Learning",
-                        "Eyes Symmetry",
-                        "Nose",
+                        *( ["Eyes Symmetry", "Nose"] if eyes_score is not None else [] ),
                         "Facial Feature",
                         "Total",
                     ],
-                    "Score": [deep_score, eyes_score, nose_score, facial_feature_score, total_score],
+                    "Score": [
+                        deep_score,
+                        *( [eyes_score, nose_score] if eyes_score is not None else [] ),
+                        facial_feature_score,
+                        total_score,
+                    ],
                 }
             )
             chart = (
