@@ -1,10 +1,13 @@
-opencv-python
+opencv-python-headless
 torch
 torchvision
 fastai
-gradio
 dlib
 cmake
 requests
 numpy
+streamlit
+mediapipe
+pandas
+altair
 
