@@ -2,9 +2,9 @@ opencv-python
 torch
 torchvision
 fastai
-gradio
 dlib
 cmake
 requests
 numpy
-
+fastapi
+uvicorn[standard]
